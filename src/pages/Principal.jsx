@@ -103,8 +103,8 @@ export default function Principal({ user, onLogout, onIrABoletas, onIrAEstadisti
     <div style={styles.container}>
       <header style={styles.header}>
         <div style={styles.tituloConLogo}>
-          <img src="/patito.png" alt="Patiti 6" style={styles.logoHeader} />
-          <h1 style={styles.titulo}>Patiti 6</h1>
+          <img src="/Patini6/patito.png" alt="Patini 6" style={styles.logoHeader} />
+          <h1 style={styles.titulo}>Patini 6</h1>
         </div>
         <div style={styles.headerBotones}>
           <button onClick={onIrABoletas} style={styles.botonBoletas}>
@@ -194,7 +194,7 @@ export default function Principal({ user, onLogout, onIrABoletas, onIrAEstadisti
                               {TIPOS_SORTEO[r.tipo_sorteo] || r.tipo_sorteo}
                             </td>
                             <td style={styles.td}>
-                              {renderNumeros(r.numeros_sorteados, r.numeros_aciertos)}
+                              {renderNumeros(r.numeros_sorteados, r.numeros_acertados)}
                             </td>
                             <td style={{ ...styles.td, ...styles.tdAciertos }}>
                               {r.aciertos}

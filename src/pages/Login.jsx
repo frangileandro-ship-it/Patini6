@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import client from '../api/client';
+import patito from '../assets/patito.png';
 
 export default function Login({ onLogin }) {
   const [email, setEmail] = useState('');
@@ -33,7 +34,7 @@ export default function Login({ onLogin }) {
   return (
     <div style={styles.container}>
       <div style={styles.card}>
-        <img src="/patito.png" alt="Patini 6" style={styles.logo} />
+        <img src={patito} alt="Patini 6" style={styles.logo} />
         <h1 style={styles.titulo}>Patini 6</h1>
         <h2 style={styles.subtitulo}>
           {modo === 'login' ? 'Iniciar sesión' : 'Crear cuenta'}
