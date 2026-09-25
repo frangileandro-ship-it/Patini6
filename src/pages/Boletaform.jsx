@@ -3,7 +3,6 @@ import { useState, useRef } from 'react';
 export default function BoletaForm({ boletaInicial, onGuardar, onCancelar }) {
   const hoy = new Date().toISOString().split('T')[0];
 
-  // Inicializa los 6 casilleros con los números de la boleta si está editando
   const numerosIniciales = boletaInicial
     ? boletaInicial.numeros.split(',').map((n) => n.trim())
     : ['', '', '', '', '', ''];
@@ -28,36 +27,30 @@ export default function BoletaForm({ boletaInicial, onGuardar, onCancelar }) {
   ];
 
   const handleCambio = (indice, valor) => {
-    // Solo permite dígitos, máximo 2 caracteres
     const limpio = valor.replace(/\D/g, '').slice(0, 2);
 
     const nuevos = [...nums];
     nuevos[indice] = limpio;
     setNums(nuevos);
 
-    // Auto-avance: si escribió 2 dígitos y no es el último, pasa al siguiente
     if (limpio.length === 2 && indice < 5) {
       refs[indice + 1].current.focus();
     }
   };
 
   const handleTecla = (indice, e) => {
-    // Si aprieta Backspace en un casillero vacío, va al anterior
     if (e.key === 'Backspace' && nums[indice] === '' && indice > 0) {
       refs[indice - 1].current.focus();
     }
-    // Si aprieta flecha izquierda, va al anterior
     if (e.key === 'ArrowLeft' && indice > 0) {
       refs[indice - 1].current.focus();
     }
-    // Si aprieta flecha derecha, va al siguiente
     if (e.key === 'ArrowRight' && indice < 5) {
       refs[indice + 1].current.focus();
     }
   };
 
   const handlePegar = (e) => {
-    // Permite pegar "05,07,18,25,30,41" o "05 07 18 25 30 41" o "050718253041"
     e.preventDefault();
     const texto = e.clipboardData.getData('text');
     const partes = texto.split(/[\s,]+/).filter((p) => p !== '');
@@ -78,13 +71,11 @@ export default function BoletaForm({ boletaInicial, onGuardar, onCancelar }) {
     e.preventDefault();
     setError('');
 
-    // Validar que los 6 estén completos
     if (nums.some((n) => n === '')) {
       setError('Faltan números por completar');
       return;
     }
 
-    // Validar rango
     for (const n of nums) {
       const num = parseInt(n);
       if (isNaN(num) || num < 0 || num > 45) {
@@ -93,7 +84,6 @@ export default function BoletaForm({ boletaInicial, onGuardar, onCancelar }) {
       }
     }
 
-    // Validar duplicados
     const unicos = new Set(nums);
     if (unicos.size !== 6) {
       setError('No puede haber números repetidos');
@@ -199,15 +189,15 @@ export default function BoletaForm({ boletaInicial, onGuardar, onCancelar }) {
 const styles = {
   card: {
     background: 'white',
-    padding: '20px',
+    padding: '16px',
     borderRadius: '8px',
     border: '1px solid #eee',
-    marginBottom: '25px',
+    marginBottom: '20px',
   },
   titulo: {
     marginTop: 0,
     marginBottom: '15px',
-    fontSize: '18px',
+    fontSize: '16px',
     color: '#1a1a1a',
   },
   form: {
@@ -224,29 +214,34 @@ const styles = {
   },
   casilleros: {
     display: 'flex',
-    gap: '8px',
+    flexWrap: 'wrap',
+    gap: '6px',
     marginBottom: '5px',
   },
   casillero: {
-    width: '50px',
-    height: '50px',
+    width: '44px',
+    height: '44px',
     textAlign: 'center',
-    fontSize: '20px',
+    fontSize: '18px',
     fontWeight: 'bold',
     border: '2px solid #ddd',
     borderRadius: '8px',
     outline: 'none',
     color: '#1a1a1a',
+    boxSizing: 'border-box',
   },
   input: {
     padding: '8px 10px',
     fontSize: '14px',
     border: '1px solid #ddd',
     borderRadius: '6px',
+    width: '100%',
+    boxSizing: 'border-box',
   },
   ayuda: {
     color: '#999',
-    fontSize: '12px',
+    fontSize: '11px',
+    lineHeight: '1.4',
   },
   error: {
     padding: '10px',
@@ -257,11 +252,12 @@ const styles = {
   },
   botones: {
     display: 'flex',
-    gap: '10px',
+    flexWrap: 'wrap',
+    gap: '8px',
     marginTop: '5px',
   },
   botonGuardar: {
-    padding: '9px 20px',
+    padding: '10px 20px',
     fontSize: '14px',
     fontWeight: 'bold',
     background: '#0066cc',
@@ -269,13 +265,15 @@ const styles = {
     border: 'none',
     borderRadius: '6px',
     cursor: 'pointer',
+    flex: '1 1 140px',
   },
   botonCancelar: {
-    padding: '9px 20px',
+    padding: '10px 20px',
     fontSize: '14px',
     background: '#eee',
     border: 'none',
     borderRadius: '6px',
     cursor: 'pointer',
+    flex: '1 1 100px',
   },
 };
