@@ -49,7 +49,7 @@ export default function Principal({ user, onLogout, onIrABoletas, onIrAEstadisti
   const renderNumeros = (sorteados, acertados) => {
     const nums = sorteados.split(',');
     return nums.map((n, i) => {
-            const esAcierto = (acertados || []).includes(n.trim());
+      const esAcierto = acertados.includes(n.trim());
       return (
         <span key={i} style={esAcierto ? styles.numAcierto : styles.num}>
           {n.trim()}
