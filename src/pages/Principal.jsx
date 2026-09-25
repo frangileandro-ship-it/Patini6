@@ -8,7 +8,7 @@ const TIPOS_SORTEO = {
   siempre_sale: 'Siempre Sale',
 };
 
-export default function Principal({ user, onLogout, onIrABoletas }) {
+export default function Principal({ user, onLogout, onIrABoletas, onIrAEstadisticas }) {
   const hoy = new Date().toISOString().split('T')[0];
   const hace30Dias = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
     .toISOString()
@@ -105,9 +105,12 @@ export default function Principal({ user, onLogout, onIrABoletas }) {
     <div style={styles.container}>
       <header style={styles.header}>
         <h1 style={styles.titulo}>Patiti 6</h1>
-        <div style={styles.headerBotones}>
+          <div style={styles.headerBotones}>
           <button onClick={onIrABoletas} style={styles.botonBoletas}>
             Mis Boletas
+          </button>
+          <button onClick={onIrAEstadisticas} style={styles.botonEstadisticas}>
+            Estadísticas
           </button>
           <span style={styles.userEmail}>{user.email}</span>
           <button onClick={onLogout} style={styles.botonSalir}>Salir</button>
@@ -246,6 +249,16 @@ const styles = {
   botonBoletas: {
     padding: '6px 12px',
     background: '#0066cc',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '13px',
+    fontWeight: 'bold',
+  },
+    botonEstadisticas: {
+    padding: '6px 12px',
+    background: '#0a7d2e',
     color: 'white',
     border: 'none',
     borderRadius: '6px',

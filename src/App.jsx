@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Login from './pages/Login';
 import Principal from './pages/Principal';
 import Boletas from './pages/Boletas';
+import Estadisticas from './pages/Estadisticas';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -37,11 +38,16 @@ export default function App() {
     return <Boletas onVolver={() => setPantalla('consultar')} />;
   }
 
+  if (pantalla === 'estadisticas') {
+    return <Estadisticas onVolver={() => setPantalla('consultar')} />;
+  }
+
   return (
     <Principal
       user={user}
       onLogout={handleLogout}
       onIrABoletas={() => setPantalla('boletas')}
+      onIrAEstadisticas={() => setPantalla('estadisticas')}
     />
   );
 }
