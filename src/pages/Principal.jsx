@@ -1,44 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import client from '../api/client';
+import BoletaForm from './BoletaForm';
 
-const TIPOS_SORTEO = {
-  tradicional: 'Tradicional',
-  segunda: 'La Segunda',
-  revancha: 'Revancha',
-  siempre_sale: 'Siempre Sale',
-};
-
-export default function Principal({ user, onLogout, onIrABoletas, onIrAEstadisticas }) {
-  const hoy = new Date().toISOString().split('T')[0];
-  const hace30Dias = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-    .toISOString()
-    .split('T')[0];
-
-  const [fechaDesde, setFechaDesde] = useState(hace30Dias);
-  const [fechaHasta, setFechaHasta] = useState(hoy);
-  const [resultados, setResultados] = useState(null);
-  const [mensaje, setMensaje] = useState('');
-  const [cargando, setCargando] = useState(false);
+export default function Boletas({ onVolver }) {
+  const [boletas, setBoletas] = useState([]);
+  const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
+  const [editando, setEditando] = useState(null);
+  const [creando, setCreando] = useState(false);
 
-  const consultar = async () => {
+  const cargar = async () => {
     setCargando(true);
     setError('');
-    setMensaje('');
-    setResultados(null);
-
     try {
-      const { data } = await client.post('/consultar', {
-        fecha_desde: fechaDesde,
-        fecha_hasta: fechaHasta,
-      });
-
-      if (data.ok) {
-        setResultados(data.resultados);
-        if (data.message) setMensaje(data.message);
-      } else {
-        setError(data.error || 'Error desconocido');
-      }
+      const { data } = await client.get('/boletas');
+      if (data.ok) setBoletas(data.boletas);
+      else setError(data.error || 'Error al cargar boletas');
     } catch (err) {
       setError(err.response?.data?.error || 'Error de conexión');
     } finally {
@@ -46,171 +23,113 @@ export default function Principal({ user, onLogout, onIrABoletas, onIrAEstadisti
     }
   };
 
-  const renderNumeros = (sorteados, acertados) => {
-    const nums = sorteados.split(',');
-    return nums.map((n, i) => {
-      const esAcierto = acertados.includes(n.trim());
-      return (
-        <span key={i} style={esAcierto ? styles.numAcierto : styles.num}>
-          {n.trim()}
-        </span>
-      );
-    });
+  useEffect(() => {
+    cargar();
+  }, []);
+
+  const crear = async (datos) => {
+    try {
+      const { data } = await client.post('/boletas', datos);
+      if (data.ok) {
+        setCreando(false);
+        cargar();
+      } else {
+        setError(data.error);
+      }
+    } catch (err) {
+      setError(err.response?.data?.error || 'Error al crear');
+    }
   };
 
-  // Agrupa por fecha, y dentro de cada fecha, por boleta
-  const agruparPorFecha = (res) => {
-    const fechas = {};
-    res.forEach((r) => {
-      if (!fechas[r.fecha]) {
-        fechas[r.fecha] = {
-          fecha: r.fecha,
-          numero_sorteo: r.numero_sorteo,
-          boletas: {},
-        };
+  const editar = async (datos) => {
+    try {
+      const { data } = await client.put(`/boletas/${editando.id}`, datos);
+      if (data.ok) {
+        setEditando(null);
+        cargar();
+      } else {
+        setError(data.error);
       }
-      const claveBoleta = r.boleta_id;
-      if (!fechas[r.fecha].boletas[claveBoleta]) {
-        fechas[r.fecha].boletas[claveBoleta] = {
-          boleta_id: r.boleta_id,
-          boleta_tipo: r.boleta_tipo,
-          boleta_numeros: r.boleta_numeros,
-          items: [],
-        };
-      }
-      fechas[r.fecha].boletas[claveBoleta].items.push(r);
-    });
-
-    // Convierte el objeto de boletas en array
-    return Object.values(fechas).map((f) => ({
-      ...f,
-      boletas: Object.values(f.boletas),
-    }));
+    } catch (err) {
+      setError(err.response?.data?.error || 'Error al editar');
+    }
   };
 
-  const filaStyle = (aciertos) => {
-    if (aciertos >= 6) {
-      return { ...styles.tr, background: '#c8e6c9', borderLeft: '4px solid #2e7d32' };
+  const eliminar = async (id) => {
+    if (!confirm('¿Eliminar esta boleta?')) return;
+    try {
+      const { data } = await client.delete(`/boletas/${id}`);
+      if (data.ok) cargar();
+      else setError(data.error);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Error al eliminar');
     }
-    if (aciertos === 5) {
-      return { ...styles.tr, background: '#fff3cd', borderLeft: '4px solid #f9a825' };
-    }
-    if (aciertos === 4) {
-      return { ...styles.tr, background: '#e3f2fd', borderLeft: '4px solid #1565c0' };
-    }
-    return styles.tr;
   };
 
   return (
     <div style={styles.container}>
       <header style={styles.header}>
-        <h1 style={styles.titulo}>Patiti 6</h1>
-          <div style={styles.headerBotones}>
-          <button onClick={onIrABoletas} style={styles.botonBoletas}>
-            Mis Boletas
-          </button>
-          <button onClick={onIrAEstadisticas} style={styles.botonEstadisticas}>
-            Estadísticas
-          </button>
-          <span style={styles.userEmail}>{user.email}</span>
-          <button onClick={onLogout} style={styles.botonSalir}>Salir</button>
-        </div>
+        <h1 style={styles.titulo}>Mis Boletas</h1>
+        <button onClick={onVolver} style={styles.botonVolver}>
+          ← Volver
+        </button>
       </header>
 
-      <div style={styles.filtros}>
-        <label style={styles.label}>
-          Desde
-          <input
-            type="date"
-            value={fechaDesde}
-            onChange={(e) => setFechaDesde(e.target.value)}
-            style={styles.input}
-          />
-        </label>
-        <label style={styles.label}>
-          Hasta
-          <input
-            type="date"
-            value={fechaHasta}
-            onChange={(e) => setFechaHasta(e.target.value)}
-            style={styles.input}
-          />
-        </label>
-        <button onClick={consultar} disabled={cargando} style={styles.botonConsultar}>
-          {cargando ? 'Consultando...' : 'Consultar Jugadas'}
-        </button>
-      </div>
-
       {error && <div style={styles.error}>{error}</div>}
-      {mensaje && <div style={styles.mensaje}>{mensaje}</div>}
 
-      {resultados && resultados.length === 0 && (
-        <div style={styles.vacio}>No se encontraron sorteos en ese rango de fechas.</div>
+      {!creando && !editando && (
+        <button onClick={() => setCreando(true)} style={styles.botonNueva}>
+          + Cargar nueva boleta
+        </button>
       )}
 
-      {resultados && resultados.length > 0 && (
-        <div>
-          {agruparPorFecha(resultados).map((grupo, idx) => (
-            <div key={idx} style={styles.grupoDia}>
-              <div style={styles.diaHeader}>
-                <span style={styles.diaTexto}>{grupo.fecha}</span>
-                <span style={styles.diaSorteo}>Sorteo #{grupo.numero_sorteo}</span>
-              </div>
+      {creando && (
+        <BoletaForm
+          onGuardar={crear}
+          onCancelar={() => setCreando(false)}
+        />
+      )}
 
-              {grupo.boletas.map((b, bIdx) => (
-                <div key={bIdx}>
-                  <div style={styles.boletaHeader}>
-                    <span style={styles.boletaEtiqueta}>
-                      Boleta {b.boleta_numeros}
-                    </span>
-                    <span
-                      style={
-                        b.boleta_tipo === 'fija'
-                          ? styles.badgeFija
-                          : styles.badgeDia
-                      }
-                    >
-                      {b.boleta_tipo === 'fija' ? 'Fija' : 'Del día'}
-                    </span>
-                  </div>
+      {editando && (
+        <BoletaForm
+          boletaInicial={editando}
+          onGuardar={editar}
+          onCancelar={() => setEditando(null)}
+        />
+      )}
 
-                  <table style={styles.tabla}>
-                    <thead>
-                      <tr>
-                        <th style={styles.th}>Tipo</th>
-                        <th style={styles.th}>Números</th>
-                        <th style={styles.th}>Aciertos</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {b.items.map((r, i) => (
-                        <tr key={i} style={filaStyle(r.aciertos)}>
-                          <td style={styles.td}>
-                            {TIPOS_SORTEO[r.tipo_sorteo] || r.tipo_sorteo}
-                          </td>
-                          <td style={styles.td}>
-                            {renderNumeros(r.numeros_sorteados, r.numeros_acertados)}
-                          </td>
-                          <td style={{ ...styles.td, ...styles.tdAciertos }}>
-                            {r.aciertos}
-                          </td>
-                        </tr>
-                      ))}
-                      <tr style={filaStyle(b.items[0].aciertos_extra)}>
-                        <td style={styles.td}><strong>Premio Extra</strong></td>
-                        <td style={styles.td}>
-                          <em style={styles.textoExtra}>
-                            18 números (Tradicional + Segunda + Revancha)
-                          </em>
-                        </td>
-                        <td style={{ ...styles.td, ...styles.tdAciertos }}>
-                          {b.items[0].aciertos_extra}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+      {cargando && <div style={styles.cargando}>Cargando...</div>}
+
+      {!cargando && boletas.length === 0 && !creando && (
+        <div style={styles.vacio}>
+          Todavía no cargaste boletas. Empezá con el botón de arriba.
+        </div>
+      )}
+
+      {!cargando && boletas.length > 0 && (
+        <div style={styles.lista}>
+          {boletas.map((b) => (
+            <div key={b.id} style={styles.boletaCard}>
+              <div style={styles.boletaInfo}>
+                <div style={styles.boletaNumeros}>{b.numeros}</div>
+                <div style={styles.boletaDetalles}>
+                  <span style={b.tipo === 'fija' ? styles.badgeFija : styles.badgeDia}>
+                    {b.tipo === 'fija' ? 'Fija' : 'Del día'}
+                  </span>
+                  <span style={styles.fechas}>
+                    Desde {b.fecha_desde}
+                    {b.fecha_hasta && ` · Hasta ${b.fecha_hasta}`}
+                  </span>
                 </div>
-              ))}
+              </div>
+              <div style={styles.boletaBotones}>
+                <button onClick={() => setEditando(b)} style={styles.botonEditar}>
+                  Editar
+                </button>
+                <button onClick={() => eliminar(b.id)} style={styles.botonEliminar}>
+                  Eliminar
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -223,156 +142,100 @@ export default function Principal({ user, onLogout, onIrABoletas, onIrAEstadisti
 
 const styles = {
   container: {
-    maxWidth: '1000px',
+    maxWidth: '800px',
     margin: '0 auto',
-    padding: '20px',
+    padding: '12px',
     fontFamily: 'system-ui, sans-serif',
   },
   header: {
     display: 'flex',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '30px',
+    gap: '10px',
+    marginBottom: '20px',
     borderBottom: '1px solid #eee',
-    paddingBottom: '15px',
+    paddingBottom: '12px',
   },
   titulo: {
     margin: 0,
-    fontSize: '28px',
+    fontSize: '22px',
     color: '#1a1a1a',
   },
-  headerBotones: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-  },
-  botonBoletas: {
-    padding: '6px 12px',
-    background: '#0066cc',
-    color: 'white',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    fontSize: '13px',
-    fontWeight: 'bold',
-  },
-    botonEstadisticas: {
-    padding: '6px 12px',
-    background: '#0a7d2e',
-    color: 'white',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    fontSize: '13px',
-    fontWeight: 'bold',
-  },
-  userEmail: {
-    marginRight: '15px',
-    color: '#666',
-    fontSize: '14px',
-  },
-  botonSalir: {
-    padding: '6px 12px',
+  botonVolver: {
+    padding: '6px 10px',
     background: '#eee',
     border: 'none',
     borderRadius: '6px',
     cursor: 'pointer',
+    fontSize: '12px',
+  },
+  botonNueva: {
+    padding: '10px 16px',
     fontSize: '13px',
-  },
-  filtros: {
-    display: 'flex',
-    gap: '15px',
-    alignItems: 'flex-end',
-    marginBottom: '25px',
-    flexWrap: 'wrap',
-  },
-  label: {
-    display: 'flex',
-    flexDirection: 'column',
-    fontSize: '13px',
-    color: '#666',
-    gap: '5px',
-  },
-  input: {
-    padding: '8px 10px',
-    fontSize: '14px',
-    border: '1px solid #ddd',
-    borderRadius: '6px',
-  },
-  botonConsultar: {
-    padding: '9px 20px',
-    fontSize: '14px',
     fontWeight: 'bold',
     background: '#0066cc',
     color: 'white',
     border: 'none',
     borderRadius: '6px',
     cursor: 'pointer',
+    marginBottom: '20px',
+    width: '100%',
   },
-  error: {
-    padding: '12px',
-    background: '#fee',
-    color: '#c00',
-    borderRadius: '6px',
-    marginBottom: '15px',
-  },
-  mensaje: {
-    padding: '12px',
-    background: '#eef',
-    color: '#0066cc',
-    borderRadius: '6px',
-    marginBottom: '15px',
+  cargando: {
+    padding: '20px',
+    textAlign: 'center',
+    color: '#666',
   },
   vacio: {
-    padding: '30px',
+    padding: '40px 20px',
     textAlign: 'center',
     background: '#f9f9f9',
     borderRadius: '8px',
     color: '#666',
   },
-  grupoDia: {
-    marginBottom: '25px',
+  lista: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px',
+  },
+  boletaCard: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '12px',
+    background: 'white',
+    border: '1px solid #eee',
     borderRadius: '8px',
-    overflow: 'hidden',
-    boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
   },
-  diaHeader: {
+  boletaInfo: {
     display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '10px 15px',
-    background: '#0066cc',
-    color: 'white',
+    flexDirection: 'column',
+    gap: '5px',
+    flex: '1 1 200px',
   },
-  diaTexto: {
-    fontWeight: 'bold',
+  boletaNumeros: {
     fontSize: '15px',
-  },
-  diaSorteo: {
-    fontSize: '13px',
-    opacity: 0.9,
-  },
-  boletaHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '8px 15px',
-    background: '#f0f7ff',
-    borderTop: '1px solid #d6e6f7',
-    borderBottom: '1px solid #d6e6f7',
-  },
-  boletaEtiqueta: {
     fontWeight: 'bold',
-    fontSize: '14px',
-    color: '#004b8f',
-    letterSpacing: '1px',
+    letterSpacing: '0.5px',
+    color: '#1a1a1a',
+  },
+  boletaDetalles: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '8px',
+    alignItems: 'center',
+    fontSize: '12px',
+    color: '#666',
   },
   badgeFija: {
     background: '#e3f2fd',
     color: '#1565c0',
     padding: '2px 8px',
     borderRadius: '4px',
-    fontSize: '12px',
+    fontSize: '11px',
     fontWeight: 'bold',
   },
   badgeDia: {
@@ -380,55 +243,41 @@ const styles = {
     color: '#f9a825',
     padding: '2px 8px',
     borderRadius: '4px',
+    fontSize: '11px',
+    fontWeight: 'bold',
+  },
+  fechas: {
+    fontSize: '11px',
+    color: '#888',
+  },
+  boletaBotones: {
+    display: 'flex',
+    gap: '6px',
+  },
+  botonEditar: {
+    padding: '6px 10px',
+    background: '#0066cc',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
     fontSize: '12px',
-    fontWeight: 'bold',
   },
-  tabla: {
-    width: '100%',
-    borderCollapse: 'collapse',
-    fontSize: '14px',
+  botonEliminar: {
+    padding: '6px 10px',
+    background: '#fee',
+    color: '#c00',
+    border: '1px solid #fcc',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '12px',
   },
-  th: {
-    textAlign: 'left',
-    padding: '10px',
-    background: '#f5f5f5',
-    borderBottom: '2px solid #ddd',
-    fontSize: '13px',
-    color: '#555',
-  },
-  tr: {
-    borderBottom: '1px solid #eee',
-  },
-  td: {
-    padding: '10px',
-    verticalAlign: 'middle',
-  },
-  tdAciertos: {
-    fontWeight: 'bold',
-    color: '#0066cc',
-    textAlign: 'center',
-  },
-  num: {
-    display: 'inline-block',
-    padding: '3px 8px',
-    margin: '2px',
-    background: '#f0f0f0',
-    borderRadius: '4px',
-    fontSize: '13px',
-    color: '#666',
-  },
-  numAcierto: {
-    display: 'inline-block',
-    padding: '3px 8px',
-    margin: '2px',
-    background: '#d4f4dd',
-    borderRadius: '4px',
-    fontSize: '13px',
-    color: '#0a7d2e',
-    fontWeight: 'bold',
-  },
-  textoExtra: {
-    color: '#666',
+  error: {
+    padding: '12px',
+    background: '#fee',
+    color: '#c00',
+    borderRadius: '6px',
+    marginBottom: '15px',
     fontSize: '13px',
   },
   firma: {

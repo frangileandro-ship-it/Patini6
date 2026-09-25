@@ -33,7 +33,7 @@ export default function Login({ onLogin }) {
   return (
     <div style={styles.container}>
       <div style={styles.card}>
-        <h1 style={styles.titulo}>Patiti 6</h1>
+        <h1 style={styles.titulo}>Patini 6</h1>
         <h2 style={styles.subtitulo}>
           {modo === 'login' ? 'Iniciar sesión' : 'Crear cuenta'}
         </h2>
