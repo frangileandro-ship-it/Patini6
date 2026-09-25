@@ -102,7 +102,10 @@ export default function Principal({ user, onLogout, onIrABoletas, onIrAEstadisti
   return (
     <div style={styles.container}>
       <header style={styles.header}>
-        <h1 style={styles.titulo}>Patiti 6</h1>
+        <div style={styles.tituloConLogo}>
+          <img src="/patito.png" alt="Patini 6" style={styles.logoHeader} />
+          <h1 style={styles.titulo}>Patini 6</h1>
+        </div>
         <div style={styles.headerBotones}>
           <button onClick={onIrABoletas} style={styles.botonBoletas}>
             Mis Boletas
@@ -191,7 +194,7 @@ export default function Principal({ user, onLogout, onIrABoletas, onIrAEstadisti
                               {TIPOS_SORTEO[r.tipo_sorteo] || r.tipo_sorteo}
                             </td>
                             <td style={styles.td}>
-                              {renderNumeros(r.numeros_sorteados, r.numeros_acertados)}
+                              {renderNumeros(r.numeros_sorteados, r.numeros_aciertos)}
                             </td>
                             <td style={{ ...styles.td, ...styles.tdAciertos }}>
                               {r.aciertos}
@@ -240,6 +243,16 @@ const styles = {
     marginBottom: '10px',
     borderBottom: '1px solid #eee',
     paddingBottom: '12px',
+  },
+  tituloConLogo: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+  },
+  logoHeader: {
+    width: '36px',
+    height: '36px',
+    objectFit: 'contain',
   },
   titulo: {
     margin: 0,

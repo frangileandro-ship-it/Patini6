@@ -33,6 +33,7 @@ export default function Login({ onLogin }) {
   return (
     <div style={styles.container}>
       <div style={styles.card}>
+        <img src="/patito.png" alt="Patini 6" style={styles.logo} />
         <h1 style={styles.titulo}>Patini 6</h1>
         <h2 style={styles.subtitulo}>
           {modo === 'login' ? 'Iniciar sesión' : 'Crear cuenta'}
@@ -89,25 +90,33 @@ const styles = {
     justifyContent: 'center',
     background: '#f0f2f5',
     fontFamily: 'system-ui, sans-serif',
+    padding: '12px',
   },
   card: {
     background: 'white',
-    padding: '40px',
+    padding: '30px 20px',
     borderRadius: '12px',
     boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
     width: '100%',
     maxWidth: '400px',
   },
+  logo: {
+    display: 'block',
+    margin: '0 auto 10px',
+    width: '120px',
+    height: '120px',
+    objectFit: 'contain',
+  },
   titulo: {
     margin: 0,
-    fontSize: '32px',
+    fontSize: '28px',
     textAlign: 'center',
     color: '#1a1a1a',
   },
   subtitulo: {
     marginTop: '8px',
     marginBottom: '24px',
-    fontSize: '16px',
+    fontSize: '15px',
     fontWeight: 'normal',
     textAlign: 'center',
     color: '#666',
@@ -123,6 +132,8 @@ const styles = {
     border: '1px solid #ddd',
     borderRadius: '8px',
     outline: 'none',
+    boxSizing: 'border-box',
+    width: '100%',
   },
   boton: {
     padding: '12px',
@@ -140,7 +151,7 @@ const styles = {
     background: '#fee',
     color: '#c00',
     borderRadius: '6px',
-    fontSize: '14px',
+    fontSize: '13px',
   },
   cambio: {
     marginTop: '20px',
@@ -158,7 +169,7 @@ const styles = {
     padding: 0,
   },
   firma: {
-    marginTop: '30px',
+    marginTop: '25px',
     marginBottom: 0,
     textAlign: 'center',
     fontSize: '12px',
