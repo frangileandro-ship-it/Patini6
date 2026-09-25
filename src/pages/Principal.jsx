@@ -58,19 +58,34 @@ export default function Principal({ user, onLogout, onIrABoletas }) {
     });
   };
 
+  // Agrupa por fecha, y dentro de cada fecha, por boleta
   const agruparPorFecha = (res) => {
-    const grupos = {};
+    const fechas = {};
     res.forEach((r) => {
-      if (!grupos[r.fecha]) {
-        grupos[r.fecha] = {
+      if (!fechas[r.fecha]) {
+        fechas[r.fecha] = {
           fecha: r.fecha,
           numero_sorteo: r.numero_sorteo,
+          boletas: {},
+        };
+      }
+      const claveBoleta = r.boleta_id;
+      if (!fechas[r.fecha].boletas[claveBoleta]) {
+        fechas[r.fecha].boletas[claveBoleta] = {
+          boleta_id: r.boleta_id,
+          boleta_tipo: r.boleta_tipo,
+          boleta_numeros: r.boleta_numeros,
           items: [],
         };
       }
-      grupos[r.fecha].items.push(r);
+      fechas[r.fecha].boletas[claveBoleta].items.push(r);
     });
-    return Object.values(grupos);
+
+    // Convierte el objeto de boletas en array
+    return Object.values(fechas).map((f) => ({
+      ...f,
+      boletas: Object.values(f.boletas),
+    }));
   };
 
   const filaStyle = (aciertos) => {
@@ -89,7 +104,7 @@ export default function Principal({ user, onLogout, onIrABoletas }) {
   return (
     <div style={styles.container}>
       <header style={styles.header}>
-        <h1 style={styles.titulo}>Patini 6</h1>
+        <h1 style={styles.titulo}>Patiti 6</h1>
         <div style={styles.headerBotones}>
           <button onClick={onIrABoletas} style={styles.botonBoletas}>
             Mis Boletas
@@ -138,43 +153,66 @@ export default function Principal({ user, onLogout, onIrABoletas }) {
                 <span style={styles.diaTexto}>{grupo.fecha}</span>
                 <span style={styles.diaSorteo}>Sorteo #{grupo.numero_sorteo}</span>
               </div>
-              <table style={styles.tabla}>
-                <thead>
-                  <tr>
-                    <th style={styles.th}>Tipo</th>
-                    <th style={styles.th}>Números</th>
-                    <th style={styles.th}>Aciertos</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {grupo.items.map((r, i) => (
-                    <tr key={i} style={filaStyle(r.aciertos)}>
-                      <td style={styles.td}>{TIPOS_SORTEO[r.tipo_sorteo] || r.tipo_sorteo}</td>
-                      <td style={styles.td}>
-                        {renderNumeros(r.numeros_sorteados, r.numeros_acertados)}
-                      </td>
-                      <td style={{ ...styles.td, ...styles.tdAciertos }}>
-                        {r.aciertos}
-                      </td>
-                    </tr>
-                  ))}
-                  <tr style={filaStyle(grupo.items[0].aciertos_extra)}>
-                    <td style={styles.td}><strong>Premio Extra</strong></td>
-                    <td style={styles.td}>
-                      <em style={styles.textoExtra}>
-                        18 números (Tradicional + Segunda + Revancha)
-                      </em>
-                    </td>
-                    <td style={{ ...styles.td, ...styles.tdAciertos }}>
-                      {grupo.items[0].aciertos_extra}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+
+              {grupo.boletas.map((b, bIdx) => (
+                <div key={bIdx}>
+                  <div style={styles.boletaHeader}>
+                    <span style={styles.boletaEtiqueta}>
+                      Boleta {b.boleta_numeros}
+                    </span>
+                    <span
+                      style={
+                        b.boleta_tipo === 'fija'
+                          ? styles.badgeFija
+                          : styles.badgeDia
+                      }
+                    >
+                      {b.boleta_tipo === 'fija' ? 'Fija' : 'Del día'}
+                    </span>
+                  </div>
+
+                  <table style={styles.tabla}>
+                    <thead>
+                      <tr>
+                        <th style={styles.th}>Tipo</th>
+                        <th style={styles.th}>Números</th>
+                        <th style={styles.th}>Aciertos</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {b.items.map((r, i) => (
+                        <tr key={i} style={filaStyle(r.aciertos)}>
+                          <td style={styles.td}>
+                            {TIPOS_SORTEO[r.tipo_sorteo] || r.tipo_sorteo}
+                          </td>
+                          <td style={styles.td}>
+                            {renderNumeros(r.numeros_sorteados, r.numeros_acertados)}
+                          </td>
+                          <td style={{ ...styles.td, ...styles.tdAciertos }}>
+                            {r.aciertos}
+                          </td>
+                        </tr>
+                      ))}
+                      <tr style={filaStyle(b.items[0].aciertos_extra)}>
+                        <td style={styles.td}><strong>Premio Extra</strong></td>
+                        <td style={styles.td}>
+                          <em style={styles.textoExtra}>
+                            18 números (Tradicional + Segunda + Revancha)
+                          </em>
+                        </td>
+                        <td style={{ ...styles.td, ...styles.tdAciertos }}>
+                          {b.items[0].aciertos_extra}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              ))}
             </div>
           ))}
         </div>
       )}
+
       <p style={styles.firma}>Creado por Pato Frangi</p>
     </div>
   );
@@ -301,6 +339,37 @@ const styles = {
     fontSize: '13px',
     opacity: 0.9,
   },
+  boletaHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '8px 15px',
+    background: '#f0f7ff',
+    borderTop: '1px solid #d6e6f7',
+    borderBottom: '1px solid #d6e6f7',
+  },
+  boletaEtiqueta: {
+    fontWeight: 'bold',
+    fontSize: '14px',
+    color: '#004b8f',
+    letterSpacing: '1px',
+  },
+  badgeFija: {
+    background: '#e3f2fd',
+    color: '#1565c0',
+    padding: '2px 8px',
+    borderRadius: '4px',
+    fontSize: '12px',
+    fontWeight: 'bold',
+  },
+  badgeDia: {
+    background: '#fff3cd',
+    color: '#f9a825',
+    padding: '2px 8px',
+    borderRadius: '4px',
+    fontSize: '12px',
+    fontWeight: 'bold',
+  },
   tabla: {
     width: '100%',
     borderCollapse: 'collapse',
@@ -349,7 +418,7 @@ const styles = {
     color: '#666',
     fontSize: '13px',
   },
-    firma: {
+  firma: {
     marginTop: '40px',
     textAlign: 'center',
     fontSize: '12px',
